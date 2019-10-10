@@ -25,8 +25,8 @@
     7. Select `yes` when it asks to reboot.
     8. After reboot login and enter `ls /dev/*i2c*`.
     9. Response should be `/dev/i2c-1`.
-
-    **TODO**: Add screenshot of raspi-config.
+    
+    ![enable I2C interface](images/enable_I2C_interface.png?raw=true "enable I2C interface")
 
 ### Step 3 - Clone repository and install dependencies
 
