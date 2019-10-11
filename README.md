@@ -31,7 +31,7 @@
 ### Step 3 - Clone repository and install dependencies
 
 1. Clone repository with `git clone https://github.com/steelbutsmart/machine-identity`.
-2. Install dependencies with `pip3 install bigchaindb`.
+2. Install dependencies with `pip3 install bigchaindb-driver==0.6.2`.
 
 ## Run the demo
 
