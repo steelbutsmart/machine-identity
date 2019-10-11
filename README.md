@@ -14,7 +14,7 @@
 
 ### Step 2 - Install and configure Raspian
 1. Download [balenaEtcher](https://www.balena.io/etcher/).
-2. Download and install [Raspian](https://www.raspberrypi.org/downloads/raspbian/).
+2. Download and install latest [Raspian](https://www.raspberrypi.org/downloads/raspbian/), at least Buster as of September 2019.
 3. Enable I2C
     1. Run `sudo raspi-config`.
     2. Use the down arrow to select `5 Interfacing Options`.
@@ -31,9 +31,11 @@
 ### Step 3 - Clone repository and install dependencies
 
 1. Clone repository with `git clone https://github.com/steelbutsmart/machine-identity`.
-2. Install dependencies with `pip3 install bigchaindb-driver==0.6.2`.
+2. Install dependencies with `pip3 install --user --requirement requirements.txt`.
 
 ## Run the demo
+
+
 
 
 **TODOs**: Add code and instructions to run the demo (Coming mid of October).
