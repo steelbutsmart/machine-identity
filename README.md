@@ -44,5 +44,4 @@
 In case of troubles to get things running please open a Github issue. For all other enquieries send us email at [hello@steelbutsmart.com](mailto:hello@steelbutsmart.com).
 
 ### Credits 
-Secure Element by [Riddle&Code](https://www.riddleandcode.com).
-Code by @dogusriddle.
+Secure Element & code by [Riddle&Code](https://www.riddleandcode.com). Idea and tweaking details by [Steel but Smart](https://steelbutsmart.com). Code by @dogusriddle.
