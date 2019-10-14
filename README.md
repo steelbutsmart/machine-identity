@@ -10,7 +10,7 @@
 2. Get a MicroSD Card like [SanDisk Ultra 16GB microSDHC with adapter](https://www.amazon.de/SanDisk-Ultra-microSDHC-Speicherkarte-Adapter/dp/B073S9SFK2/).
 3. Install Secure Element as illustrated.
 
-**TODO**: add image with instructions how to plugin secure element.
+![install Secure Element](images/install_secure_element_on_raspberry.png?raw=true "install Secure Element")
 
 ### Step 2 - Install and configure Raspian
 1. Download [balenaEtcher](https://www.balena.io/etcher/).
