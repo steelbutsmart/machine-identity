@@ -1,229 +1,173 @@
+import argparse
 import base58
 from SEAL import SEAL
 from bigchaindb.common.crypto import key_pair_from_ed25519_key
-from bigchaindb_driver.crypto import generate_keypair
-from cryptoconditions import crypto
 from bigchaindb_driver import BigchainDB
 from collections import namedtuple
+import hashlib
 import binascii
+import datetime
 import os
 import json
-import sys, getopt
 
 CryptoKeypair = namedtuple('CryptoKeypair', ('private_key', 'public_key'))
 current_dir = os.path.dirname(os.path.abspath(__file__))
-bdb_root_url = 'https://ipdb-eu2.riddleandcode.com'
+r3c_root_url = 'https://ipdb-eu2.riddleandcode.com'
+r3c = BigchainDB(r3c_root_url)
+secure_element = SEAL(current_dir+"/libseadyn.so")
 
 
+def create_machine_identity(machine):
+    randomHEX = (binascii.hexlify(secure_element.get_random())).decode()
+    CryptoKeypair = key_pair_from_ed25519_key(randomHEX)
+    secure_element.save_keypair(CryptoKeypair.public_key,
+                                CryptoKeypair.private_key)
+    asset = {
+        'data': {
+            'id': CryptoKeypair.public_key,
+            "Machine": {
+                "Name": machine,
+                "Type": "Lucky Puncher",
+                "Owner": "Wunderbar GmbH",
+                "AddressLine": "Im Glück 1",
+                "ZipCode": "4010",
+                "City": "Linz",
+            },
+            "Location": "Halle 8"
+        }
+    }
+    prepared_token_tx = r3c.transactions.prepare(
+        operation="CREATE",
+        metadata=None,
+        signers=CryptoKeypair.public_key,
+        recipients=[([CryptoKeypair.public_key], 10)],
+        asset=asset)
+    fulfilled_token_tx = r3c.transactions.fulfill(
+        prepared_token_tx, private_keys=CryptoKeypair.private_key)
+    tx = r3c.transactions.send_commit(fulfilled_token_tx)
+    print("Machine Identity of " + machine)
+    print("Hash of private key " +
+          secure_element.get_hash(CryptoKeypair.private_key).hex())
+    print("Public key " + CryptoKeypair.public_key +
+          " stored on R3C in transaction:")
+    print(r3c_root_url + "/api/v1/transactions/" + tx['id'])
+    print(json.dumps(tx["asset"], indent=2))
 
-def generate_identity(se):
-    rnd = se.get_random()
-    rndHex = (binascii.hexlify(rnd)).decode()
-    CryptoKeypair = key_pair_from_ed25519_key(rndHex)
-    SECRET=CryptoKeypair.private_key
-    PUBLIC=CryptoKeypair.public_key
-    se.save_keypair(PUBLIC,SECRET)
-    print("Hash of priv key :")
-    print(se.get_hash(SECRET,len(SECRET)).hex())
-    print("pub key :")
-    print(PUBLIC)
 
-def read_identity(se):
-    return CryptoKeypair(private_key=str(base58.b58encode(se.read_data(0,32)).decode()),
-                         public_key=str(base58.b58encode(se.get_public_key()).decode()))
+def lookup_machine(public_key):
+    tx = r3c.assets.get(search=public_key)
+    print(json.dumps(tx[0], indent=2))
+    print(r3c_root_url + "/api/v1/transactions/" + tx[0]["id"])
 
-def hash_data_sources(se,paths,id):
 
-    file = open(paths,"r")
-    content = file.read()
-    content_size = len(content)
-    sha = se.get_hash(content,content_size)
-    print(sha.hex())
+def get_identity(se):
+    return CryptoKeypair(
+        private_key=str(base58.b58encode(se.read_data(0, 32)).decode()),
+        public_key=str(base58.b58encode(se.get_public_key()).decode())
+    )
 
-    with open(paths) as f:
+
+def read_and_sign_source_data(source):
+    machine = get_identity(secure_element)
+    with open(source) as f:
         data = json.load(f)
         f.close()
-
-    a_dict = {'sha256': sha.hex()}
-    data.update(a_dict)
-    with open("database/"+id, 'w') as f:
-        json.dump(data, f)
+    data.update({"creation_datetime": datetime.datetime.utcnow().isoformat()})
+    sha256 = secure_element.get_hash(json.dumps(data))
+    record = {
+       "data": data,
+       "sha256": sha256.hex() 
+    }
+    asset = {
+        "data": {
+            "id": data["id"],
+            "sha": sha256.hex()
+        },
+    }
+    prepared_token_tx = r3c.transactions.prepare(
+        operation='CREATE',
+        metadata=None,
+        signers=machine.public_key,
+        recipients=[([machine.public_key], 10)],
+        asset=asset
+    )
+    fulfilled_token_tx = r3c.transactions.fulfill(
+        prepared_token_tx, private_keys=machine.private_key)
+    tx = r3c.transactions.send_commit(fulfilled_token_tx)
+    with open("database/" + tx['id'] + ".json", "w") as f:
+        json.dump(record, f)
         f.close()
-
-def prepare_outputs(se,id,file):
-    print("\nHashing "+ file+ "\n")
-    hash_data_sources(se,"source/"+file,id)
-
-def attest_device(device_name,pair):
-    data_sources = {
-        'data': {
-            "devices" :device_name
-        },
-    }
-    prepared_token_tx = bdb.transactions.prepare(
-        operation='CREATE',
-        metadata={"ID":"Attestation of "+ device_name},
-        signers=pair.public_key,
-        recipients=[([pair.public_key], 10)],
-        asset=data_sources)
-    print("prepared_token_tx")
-
-    # fulfill and send the transaction
-    fulfilled_token_tx = bdb.transactions.fulfill(
-        prepared_token_tx, private_keys=pair.private_key)
-    print("fulfilled_token_tx")
-
-    bdb.transactions.send_commit(fulfilled_token_tx)
+    print("Data in file " + source + " plus SHA256 hash stored in")
+    print("database/" + fulfilled_token_tx['id'] + ".json")
+    print("Id and SHA256 hash in transaction on R3C")
+    print(r3c_root_url + "/api/v1/transactions/" + tx['id'])
+    print("Id and SHA256 of data")
+    print(json.dumps(tx["asset"], indent=2))
 
 
-def send_data_blockchain(se,device_name,pair,file):
-    data_sources = {
-        'data': {
-            "devices" :device_name
-        },
-    }
-    path = "source/" + file
-    f = open(path,"r")
-    content = f.read()
-    f.close()
-    content_size = len(content)
-    sha = se.get_hash(content,content_size)
-    prepared_token_tx = bdb.transactions.prepare(
-        operation='CREATE',
-        metadata={"SHA":sha.hex()},
-        signers=pair.public_key,
-        recipients=[([pair.public_key], 10)],
-        asset=data_sources)
-
-    # fulfill and send the transaction
-    fulfilled_token_tx = bdb.transactions.fulfill(
-        prepared_token_tx, private_keys=pair.private_key)
-
-    prepare_outputs(se,fulfilled_token_tx["id"],file)
-
-    tx=bdb.transactions.send_commit(fulfilled_token_tx)
-    print("\n... TX SENT ...\n")
+def query_for_data(public_key):
+    tx_ids = set()
+    tx = r3c.assets.get(search=public_key)
     print(tx)
-
-bdb = BigchainDB(bdb_root_url)
-
-def main(argv):
-
-    # if len(sys.argv) <= 1:
-    #     opts.append('h')
-    raspberry = SEAL(current_dir+"/libseadyn.so")
-    inputfile = ''
-
-    if not os.path.exists('database'):
-        os.makedirs('database')
-    try:
-        opts, args = getopt.getopt(argv,"cQqsghi:",["ifile="])
-    except getopt.GetoptError:
-        print ('\n\tUsage : python3 mi.py -i <ID>\n\n \
-        \r\trun python3 mi.py - h for HELP.\n')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('\n\tUsage : python3 mi.py -i <ID> -s\n \
-            \r\t\tpython3 mi.py -i <ID> -q \n \
-            \r\t\tpython3 mi.py -g\n \
-            \r COMMANDS:\n\n \
-            \r   -i\t:  id of the device to attest to the blockchain.\n \
-            \r   -g\t:  generate a new ED25519 key-pair & store on the SECURE-ELEMENT.\n \
-            \r   -s\t:  hash the file under ./source save the result under ./database with TX-ID name and send the digest to the blockchain.\n \
-            \r   -q\t:  to querry the blockchain with the <ID> for matching transaction under this name and list them by the TRANSACTION-ID.\n \
-            \r   -Q\t:  Get the full transaction details for all the transactions with the matching <ID>\n \
-            \r   -c\t:  Check the hash values in ./database against the values get from the blockchain.\n ')
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt == '-g':
-            generate_identity(raspberry)
-            sys.exit()
-        elif opt == '-s':
-            if len(sys.argv) <= 1 or not inputfile:
-                print ('\n\tUsage : python3 mi.py -i <ID>\n\t<ID> can not be empty !\n')
-                sys.exit(2)
-            else:
-                pair = read_identity(raspberry)
-                print(pair.private_key)
-                print(pair.public_key)
-
-                data_lists = os.listdir(current_dir + "/source")
-
-                for data in data_lists:
-                    send_data_blockchain(raspberry,inputfile,pair,data)
-        elif opt == '-q':
-            tx_ids = set()
-            if len(sys.argv) <= 1 or not inputfile:
-                print ('\n\tUsage : python3 mi.py -i <ID>\n\t<ID> can not be empty !\n')
-                sys.exit(2)
-            TX = bdb.assets.get(search=inputfile)
-            print("TX ids with the asset name "+inputfile +" in it.\n")
-            for i,x in zip(range(len(TX)),TX):
-                tx_ids.add(x["id"])
-            print(tx_ids)
-            print("\n\n")
-            sys.exit()
-        elif opt == '-Q':
-            tx_ids = set()
-            if len(sys.argv) <= 1 or not inputfile:
-                print ('\n\tUsage : python3 mi.py -i <ID>\n\t<ID> can not be empty !\n')
-                sys.exit(2)
-            TX = bdb.assets.get(search=inputfile)
-            print("\n\nTX ids with the asset name "+inputfile +" in it.\n")
-            for i,x in zip(range(len(TX)),TX):
-                tx_ids.add(x["id"])
-            for x in tx_ids:
-                full_tx = bdb.transactions.retrieve(txid=x)
-                print(full_tx)
-                print("\n")
-            sys.exit()
-        elif opt == '-c':
-            tx_ids = os.listdir(current_dir + "/database")
-            if not tx_ids:
-                print("\nNo outpul file found. Exiting ...\n")
-                sys.exit()
-            print("\n")
-            print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
-            for x in tx_ids:
-                full_tx = bdb.transactions.retrieve(txid=x)
-                print("SHA value under transaction-id "  + x + " : " + full_tx["metadata"]["SHA"] + "\n\n")
-
-                with open("database/"+x) as jsonfile:
-                    data = json.load(jsonfile)
-
-                print("SHA value under file " + "database/" + x + " : " + data["sha256"]+ "\n\n")
-                if full_tx["metadata"]["SHA"] != data["sha256"]:
-                    print("\nSHA contents on the database and the blockchain doesn`t match ! Aborting ... \n\n")
-                    sys.exit(2)
-                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------\n")
-            print("\t\tHashes match for all the files under ./database\n\n \
-            \t\t     ... TESTS PASSED ...\n\n")
-            sys.exit()
-    if len(sys.argv) <= 1:
-        print ('\n\tUsage : python3 mi.py -i <ID> -s\n \
-        \r\t\tpython3 mi.py -i <ID> -q \n \
-        \r\t\tpython3 mi.py -g\n \
-        \r COMMANDS:\n\n \
-        \r   -i\t:  id of the device to attest to the blockchain.\n \
-        \r   -g\t:  generate a new ED25519 key-pair & store on the SECURE-ELEMENT.\n \
-        \r   -s\t:  hash the file under ./source save the result under ./database with TX-ID name and send the digest to the blockchain.\n \
-        \r   -q\t:  to querry the blockchain with the <ID> for matching transaction under this name and list them by the TRANSACTION-ID.\n \
-        \r   -Q\t:  Get the full transaction details for all the transactions with the matching <ID>\n \
-        \r   -c\t:  Check the hash values in ./database against the values get from the blockchain.\n ')
-    raspberry.close_comms()
+    for i, x in zip(range(len(tx)), tx):
+        tx_ids.add(x["id"])
+    print("Transactions")
+    for i in tx_ids:
+        print("tx_id: " + i)
+        print(r3c_root_url + "/api/v1/transactions/" + i + "\n")
 
 
-if __name__ == "__main__":
-   main(sys.argv[1:])
+def retrieve_data(transaction):
+    tx = r3c.transactions.retrieve(txid=transaction)
+    sha_stored_on_R3C = tx["asset"]["data"]["sha"]
+    public_key_signer = tx["outputs"][0]["public_keys"][0]
+    record = "database/" + transaction + ".json"
+    with open(record) as f:
+        record = json.load(f)
+        f.close()
+    sha_stored_in_db = record['sha256']
+    sha_calculated = hashlib.sha256(json.dumps(record["data"]).encode('utf-8')).hexdigest()
+    print("Hash calculated from data: " + sha_calculated)
+    print("Hash stored in database:   " + sha_stored_in_db)
+    print("Hash stored on R3C:        " + sha_stored_on_R3C)
+    if sha_calculated == sha_stored_in_db == sha_stored_on_R3C:
+        print("Hashes match!\n")
+    else:
+        print("ATTENTION! Hashes do not match!\n")
+    print("Transaction:\n" + r3c_root_url + "/api/v1/" + tx['id'])
+    print("Data:\n" + json.dumps(record['data'], indent=2))
+    print("Identity of transaction signer:")
+    lookup_machine(public_key_signer)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", metavar="name",
+                    help="Creates a machine identity with <name> and attests\
+                    it on R3C")
+parser.add_argument("-d", metavar="source", 
+                    help="Reads data from file <source> and\
+                    stores hash signed by machine on R3C"
+                    )
+parser.add_argument("-q", metavar="public_key", 
+                    help="queries R3C for transactions signed by machine\
+                    with <public_key>")
+parser.add_argument("-l", metavar="public_key",
+                    help="lookup machine descrption for machine with\
+                    <public_key")
+parser.add_argument("-r", metavar="tx", 
+                    help="gets and verifies data identified by R3C transaction\
+                    <tx>")
+args = parser.parse_args()
 
-
-
-
-
-
-
-
+if args.m is not None:
+    create_machine_identity(args.m)
+elif args.d is not None:
+    read_and_sign_source_data(args.d)
+elif args.q is not None:
+    query_for_data(args.q)
+elif args.r is not None:
+    retrieve_data(args.r)
+elif args.l is not None:
+    lookup_machine(args.l)
+else:
+    parser.print_help()
