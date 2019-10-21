@@ -12,8 +12,8 @@ import json
 
 CryptoKeypair = namedtuple('CryptoKeypair', ('private_key', 'public_key'))
 current_dir = os.path.dirname(os.path.abspath(__file__))
-r3c_root_url = 'https://ipdb-eu2.riddleandcode.com'
-r3c = BigchainDB(r3c_root_url)
+R3C_ROOT_URL = 'https://ipdb-eu2.riddleandcode.com'
+r3c = BigchainDB(R3C_ROOT_URL)
 secure_element = SEAL(current_dir+"/libseadyn.so")
 
 
@@ -50,14 +50,14 @@ def create_machine_identity(machine):
           secure_element.get_hash(CryptoKeypair.private_key).hex())
     print("Public key " + CryptoKeypair.public_key +
           " stored on R3C in transaction:")
-    print(r3c_root_url + "/api/v1/transactions/" + tx['id'])
+    print(R3C_ROOT_URL + "/api/v1/transactions/" + tx['id'])
     print(json.dumps(tx["asset"], indent=2))
 
 
 def lookup_machine(public_key):
     tx = r3c.assets.get(search=public_key)
     print(json.dumps(tx[0], indent=2))
-    print(r3c_root_url + "/api/v1/transactions/" + tx[0]["id"])
+    print(R3C_ROOT_URL + "/api/v1/transactions/" + tx[0]["id"])
 
 
 def get_identity(se):
@@ -100,7 +100,7 @@ def read_and_sign_source_data(source):
     print("Data in file " + source + " plus SHA256 hash stored in")
     print("database/" + fulfilled_token_tx['id'] + ".json")
     print("Id and SHA256 hash in transaction on R3C")
-    print(r3c_root_url + "/api/v1/transactions/" + tx['id'])
+    print(R3C_ROOT_URL + "/api/v1/transactions/" + tx['id'])
     print("Id and SHA256 of data")
     print(json.dumps(tx["asset"], indent=2))
 
@@ -114,7 +114,7 @@ def query_for_data(public_key):
     print("Transactions")
     for i in tx_ids:
         print("tx_id: " + i)
-        print(r3c_root_url + "/api/v1/transactions/" + i + "\n")
+        print(R3C_ROOT_URL + "/api/v1/transactions/" + i + "\n")
 
 
 def retrieve_data(transaction):
@@ -134,7 +134,7 @@ def retrieve_data(transaction):
         print("Hashes match!\n")
     else:
         print("ATTENTION! Hashes do not match!\n")
-    print("Transaction:\n" + r3c_root_url + "/api/v1/" + tx['id'])
+    print("Transaction:\n" + R3C_ROOT_URL + "/api/v1/" + tx['id'])
     print("Data:\n" + json.dumps(record['data'], indent=2))
     print("Identity of transaction signer:")
     lookup_machine(public_key_signer)
@@ -142,21 +142,15 @@ def retrieve_data(transaction):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", metavar="name",
-                    help="Creates a machine identity with <name> and attests\
-                    it on R3C")
+                    help="Creates a machine identity with <name> and attests it on R3C")
 parser.add_argument("-d", metavar="source", 
-                    help="Reads data from file <source> and\
-                    stores hash signed by machine on R3C"
-                    )
+                    help="Reads data from file <source> and stores hash signed by machine on R3C")
 parser.add_argument("-q", metavar="public_key", 
-                    help="queries R3C for transactions signed by machine\
-                    with <public_key>")
+                    help="queries R3C for transactions signed by machine with <public_key>")
 parser.add_argument("-l", metavar="public_key",
-                    help="lookup machine descrption for machine with\
-                    <public_key")
+                    help="lookup machine descrption for machine with <public_key")
 parser.add_argument("-r", metavar="tx", 
-                    help="gets and verifies data identified by R3C transaction\
-                    <tx>")
+                    help="gets and verifies data identified by R3C transaction <tx>")
 args = parser.parse_args()
 
 if args.m is not None:
