@@ -1,6 +1,6 @@
 # Machine Identity
 
-**TODO**: write a little intro what we want to show. 
+This application demonstrates how machine identity can be created and be used to secure data created by a machine.
 
 ## Setup
 
