@@ -4,7 +4,11 @@ This application demonstrates how machine identity can be created and be used to
 
 ## Setup
 
-### Step 1 - Get a Raspberry
+### Step 1 - Get a Secure Element
+
+If haven't received one please send an email to [hello@steelbutsmart.com](mailto:hello@steelbutsmart.com). 
+
+### Step 2 - Get a Raspberry
 
 1. Get a [Raspberry 4](https://www.raspberrypi.org/products/raspberry-pi-4-model-b/) or [Raspberry 3](https://www.raspberrypi.org/products/raspberry-pi-3-model-b-plus/) plus possibly some accessories as a case or USB power cable. 
 2. Get a MicroSD Card like [SanDisk Ultra 16GB microSDHC with adapter](https://www.amazon.de/SanDisk-Ultra-microSDHC-Speicherkarte-Adapter/dp/B073S9SFK2/).
@@ -12,7 +16,7 @@ This application demonstrates how machine identity can be created and be used to
 
 ![install Secure Element](images/install_secure_element_on_raspberry.png?raw=true "install Secure Element")
 
-### Step 2 - Install and configure Raspian
+### Step 3 - Install and configure Raspian
 1. Download [balenaEtcher](https://www.balena.io/etcher/).
 2. Download and install latest [Raspian](https://www.raspberrypi.org/downloads/raspbian/), at least Buster as of September 2019.
 3. Enable I2C
@@ -28,7 +32,7 @@ This application demonstrates how machine identity can be created and be used to
     
     ![enable I2C interface](images/enable_I2C_interface.png?raw=true "enable I2C interface")
 
-### Step 3 - Clone repository and install dependencies
+### Step 4 - Clone repository and install dependencies
 
 1. Clone repository with `git clone https://github.com/steelbutsmart/machine-identity`.
 2. Install dependencies with `pip3 install --user --requirement requirements.txt`.
