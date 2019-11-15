@@ -101,7 +101,8 @@ class SEAL:
                 print("SE se_get_pubkey Success\n")
         return bytes(bytearray(pubKey)[:32])
 
-    def get_hash(self,data,dataLen):
+    def get_hash(self,data):
+        dataLen = len(data)
         b_data = str(data).encode('utf-8')
         sha = ((ctypes.c_uint8) * 32 )()
         shaLen = ((ctypes.c_uint8) * 2 )(32)
