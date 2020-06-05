@@ -17,8 +17,8 @@ If haven't received one please send an email to [hello@steelbutsmart.com](mailto
 ![install Secure Element](images/install_secure_element_on_raspberry.png?raw=true "install Secure Element")
 
 ### Step 3 - Install and configure Raspian
-1. Download [balenaEtcher](https://www.balena.io/etcher/).
-2. Download and install latest [Raspian](https://www.raspberrypi.org/downloads/raspbian/), at least Buster as of September 2019.
+1. Download [Raspberry Pi Imager](https://www.raspberrypi.org/downloads/).
+2. Install latest Raspberry Pi OS.
 3. Enable I2C
     1. Run `sudo raspi-config`.
     2. Use the down arrow to select `5 Interfacing Options`.
