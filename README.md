@@ -179,7 +179,7 @@ https://ipdb-eu2.riddleandcode.com/api/v1/transactions/73e0cf09886e5a266062c9840
 
 
 ### Troubles or Questions?
-In case of troubles to get things running please open a Github issue. For all other enquieries send us email at [hello@steelbutsmart.com](mailto:hello@steelbutsmart.com).
+In case of troubles to get things running please open a Github issue. For all other enquieries send us email at [hello@s1seven.com](mailto:hello@s1seven.com).
 
 ### Credits 
-Secure Element & [initial code and library](https://github.com/RiddleAndCode/SEAL-SDK) by [Riddle&Code](https://www.riddleandcode.com). Idea and tweaking details by [Steel but Smart](https://steelbutsmart.com). Code by @dogusriddle.
+Secure Element & [initial code and library](https://github.com/RiddleAndCode/SEAL-SDK) by [Riddle&Code](https://www.riddleandcode.com). Idea and tweaking details by [S1Seven](https://s1seven.com). Code by @dogusriddle.
