@@ -48,7 +48,7 @@ pytest-pythonpath==0.7.3
 python-rapidjson==0.6.3
 python-rapidjson-schema==0.1.1
 pytz==2019.3
-PyYAML==5.1.2
+PyYAML==5.4
 requests==2.22.0
 setproctitle==1.1.10
 six==1.12.0
