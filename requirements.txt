@@ -8,7 +8,7 @@ base58==1.0.3
 BigchainDB==2.0.0
 bigchaindb-abci==0.7.0
 bigchaindb-driver==0.6.2
-certifi==2019.9.11
+certifi==2022.12.7
 cffi==1.12.3
 chardet==3.0.4
 Click==7.0
